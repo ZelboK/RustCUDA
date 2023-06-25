@@ -3,8 +3,6 @@ use rustc_codegen_ssa::CompiledModule;
 use rustc_codegen_ssa::NativeLib;
 use rustc_data_structures::owned_slice::OwnedSlice;
 
-use rustc_data_structures::rustc_erase_owner;
-use rustc_data_structures::sync::MetadataRef;
 use rustc_hash::FxHashSet;
 use rustc_middle::middle::dependency_format::Linkage;
 use rustc_session::cstore::MetadataLoader;
@@ -28,38 +26,45 @@ use tracing::{debug, trace};
 use crate::context::CodegenArgs;
 use crate::LlvmMod;
 use rustc_ast::CRATE_NODE_ID;
+use rustc_data_structures::fx::FxHashSet;
 use rustc_session::config::OutFileName;
+use std::fmt;
 
 pub(crate) struct NvvmMetadataLoader;
 
+impl fmt::Debug for NvvmMetadataLoader {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Placeholder until i know what to put here...: {}", self.id)
+    }
+}
 impl MetadataLoader for NvvmMetadataLoader {
-    fn get_rlib_metadata(&self, _target: &Target, filename: &Path) -> Result<MetadataRef, String> {
+    fn get_rlib_metadata(&self, _target: &Target,
+                         filename: &Path) -> Result<OwnedSlice, String> {
         trace!("Retrieving rlib metadata for `{:?}`", filename);
         read_metadata(filename)
     }
 
-    fn get_dylib_metadata(&self, target: &Target, filename: &Path) -> Result<MetadataRef, String> {
-        trace!("Retrieving dylib metadata for `{:?}`", filename);
-        // This is required for loading metadata from proc macro crates compiled as dylibs for the host target.
+    fn get_dylib_metadata(&self, target: &Target, filename: &Path) -> Result<OwnedSlice, String> {
+        trace!("Retrieving dylib metadata for `{:?}`",  filename);
+        // This is required for loading metadata fr om proc macro crates compiled as dylibs for the host target.
         rustc_codegen_llvm::LlvmCodegenBackend::new()
             .metadata_loader()
             .get_dylib_metadata(target, filename)
     }
 }
 
-fn read_metadata(rlib: &Path) -> Result<MetadataRef, String> {
-    let read_meta = || -> Result<Option<MetadataRef>, io::Error> {
+fn read_metadata(rlib: &Path) -> Result<OwnedSlice, String> {
+    let read_meta = || -> Result<Option<OwnedSlice>, io::Error> {
         for entry in Archive::new(File::open(rlib)?).entries()? {
             let mut entry = entry?;
             if entry.path()? == Path::new(".metadata") {
                 let mut bytes = Vec::new();
                 entry.read_to_end(&mut bytes)?;
-                let slice: OwnedSlice =
+
+                return
                     rustc_data_structures::
                     owned_slice::
-                    slice_owned(bytes, |b| &b[..]);
-
-                return Ok(Some(rustc_erase_owner!(buf.map_owner_box())));
+                    try_slice_owned(bytes, |b| &b[..]);
             }
         }
         Ok(None)
@@ -288,7 +293,8 @@ fn create_archive(sess: &Session, files: &[&Path], metadata: &[u8], out_filename
     }
 }
 
-fn try_create_archive(files: &[&Path], metadata: &[u8], out_filename: &OutFileName) -> io::Result<()> {
+fn try_create_archive(files: &[&Path],
+                      metadata: &[u8], out_filename: &OutFileName) -> io::Result<()> {
     let file = File::create(out_filename)?;
     let mut builder = Builder::new(file);
     {
@@ -298,7 +304,7 @@ fn try_create_archive(files: &[&Path], metadata: &[u8], out_filename: &OutFileNa
         header.set_cksum();
         builder.append(&header, metadata)?;
     }
-    let mut filenames = FxHashSet::default();
+    let mut filenames = rustc_data_structures::fx::FxHashSet::default();
     filenames.insert(OsStr::new(".metadata"));
     for file in files {
         assert!(

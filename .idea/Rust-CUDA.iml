@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="CPP_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/crates/blastoff/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cublas_sys/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cuda_builder/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cuda_std/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cuda_std_macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cudnn/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cust/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cust_core/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cust_derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/cust_raw/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/find_cuda_helper/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/gpu_rand/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/nvvm/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix/examples/ex02_pipeline/device/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix/examples/ex02_pipeline/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix/examples/ex03_window/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix/examples/ex04_mesh/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix/examples/rust/ex04_mesh_gpu/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix_device/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/optix_device_macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/ptx/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/ptx_compiler/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/rustc_codegen_nvvm/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/rustc_codegen_nvvm_macros/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/cuda/cpu/add/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/cuda/cpu/path_tracer/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/cuda/gpu/add_gpu/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/cuda/gpu/path_tracer_gpu/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/examples/optix/denoiser/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/xtask/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
