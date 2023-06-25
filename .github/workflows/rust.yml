@@ -38,9 +38,9 @@ jobs:
         with:
           cuda: '11.2.2'
 
-      # random command that forces rustup to install stuff in rust-toolchain
-      - name: Install rust-toolchain
-        run: cargo version
+#      # random command that forces rustup to install stuff in rust-toolchain
+#      - name: Install rust-toolchain
+#        run: cargo version
         
       - name: Add rustup components
         run: rustup component add rustfmt clippy

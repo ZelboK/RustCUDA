@@ -1,7 +1,7 @@
 use crate::llvm::{self, AttributePlace::*, Value};
 use rustc_ast::{ast::MetaItemLit, ast::NestedMetaItem, Attribute, LitKind, AttrKind};
 use rustc_attr::{InlineAttr, OptimizeAttr};
-use rustc_middle::{middle::codegen_fn_attrs::CodegenFnAttrFlags, ty, ty::Attributes};
+use rustc_middle::{middle::codegen_fn_attrs::CodegenFnAttrFlags, ty};
 use rustc_session::{config::OptLevel, Session};
 use rustc_span::{sym, Symbol};
 

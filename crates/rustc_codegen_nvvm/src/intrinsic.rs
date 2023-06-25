@@ -4,14 +4,15 @@ use crate::llvm::{self, Value};
 use crate::target;
 use crate::ty::LayoutLlvmExt;
 use crate::{builder::Builder, context::CodegenCx};
-use rustc_codegen_ssa::common::span_invalid_monomorphization_error;
 use rustc_codegen_ssa::mir::place::PlaceRef;
+use rustc_codegen_ssa::errors::InvalidMonomorphization::BasicIntegerType;
 use rustc_codegen_ssa::traits::DerivedTypeMethods;
 use rustc_codegen_ssa::traits::{BaseTypeMethods, BuilderMethods, ConstMethods, OverflowOp};
 use rustc_codegen_ssa::{mir::operand::OperandRef, traits::IntrinsicCallMethods};
 use rustc_middle::ty::layout::{HasTyCtxt, LayoutOf};
 use rustc_middle::ty::Ty;
 use rustc_middle::{bug, ty};
+use rustc_query_system::dep_graph::DepContext;
 use rustc_span::symbol::kw;
 use rustc_span::Span;
 use rustc_span::{sym, Symbol};
@@ -102,49 +103,49 @@ fn saturating_intrinsic_impl<'a, 'll, 'tcx>(
 
 fn get_simple_intrinsic<'ll, 'tcx>(cx: &CodegenCx<'ll, 'tcx>, name: Symbol) -> Option<&'ll Value> {
     #[rustfmt::skip]
-    let llvm_name = match name {
-        sym::sqrtf32      => "__nv_sqrtf",
-        sym::sqrtf64      => "__nv_sqrt",
-        sym::powif32      => "__nv_powif",
-        sym::powif64      => "__nv_powi",
-        sym::sinf32       => "__nv_sinf",
-        sym::sinf64       => "__nv_sin",
-        sym::cosf32       => "__nv_cosf",
-        sym::cosf64       => "__nv_cos",
-        sym::powf32       => "__nv_powf",
-        sym::powf64       => "__nv_pow",
-        sym::expf32       => "__nv_expf",
-        sym::expf64       => "__nv_exp",
-        sym::exp2f32      => "__nv_exp2f",
-        sym::exp2f64      => "__nv_exp2",
-        sym::logf32       => "__nv_logf",
-        sym::logf64       => "__nv_log",
-        sym::log10f32     => "__nv_log10f",
-        sym::log10f64     => "__nv_log10",
-        sym::log2f32      => "__nv_log2f",
-        sym::log2f64      => "__nv_log2",
-        sym::fmaf32       => "__nv_fmaf",
-        sym::fmaf64       => "__nv_fma",
-        sym::fabsf32      => "__nv_fabsf",
-        sym::fabsf64      => "__nv_fabs",
-        sym::minnumf32    => "__nv_fminf",
-        sym::minnumf64    => "__nv_fmin",
-        sym::maxnumf32    => "__nv_fmaxf",
-        sym::maxnumf64    => "__nv_fmax",
-        sym::copysignf32  => "__nv_copysignf",
-        sym::copysignf64  => "__nv_copysign",
-        sym::floorf32     => "__nv_floorf",
-        sym::floorf64     => "__nv_floor",
-        sym::ceilf32      => "__nv_ceilf",
-        sym::ceilf64      => "__nv_ceil",
-        sym::truncf32     => "__nv_truncf",
-        sym::truncf64     => "__nv_trunc",
-        sym::rintf32      => "__nv_rintf",
-        sym::rintf64      => "__nv_rint",
+        let llvm_name = match name {
+        sym::sqrtf32 => "__nv_sqrtf",
+        sym::sqrtf64 => "__nv_sqrt",
+        sym::powif32 => "__nv_powif",
+        sym::powif64 => "__nv_powi",
+        sym::sinf32 => "__nv_sinf",
+        sym::sinf64 => "__nv_sin",
+        sym::cosf32 => "__nv_cosf",
+        sym::cosf64 => "__nv_cos",
+        sym::powf32 => "__nv_powf",
+        sym::powf64 => "__nv_pow",
+        sym::expf32 => "__nv_expf",
+        sym::expf64 => "__nv_exp",
+        sym::exp2f32 => "__nv_exp2f",
+        sym::exp2f64 => "__nv_exp2",
+        sym::logf32 => "__nv_logf",
+        sym::logf64 => "__nv_log",
+        sym::log10f32 => "__nv_log10f",
+        sym::log10f64 => "__nv_log10",
+        sym::log2f32 => "__nv_log2f",
+        sym::log2f64 => "__nv_log2",
+        sym::fmaf32 => "__nv_fmaf",
+        sym::fmaf64 => "__nv_fma",
+        sym::fabsf32 => "__nv_fabsf",
+        sym::fabsf64 => "__nv_fabs",
+        sym::minnumf32 => "__nv_fminf",
+        sym::minnumf64 => "__nv_fmin",
+        sym::maxnumf32 => "__nv_fmaxf",
+        sym::maxnumf64 => "__nv_fmax",
+        sym::copysignf32 => "__nv_copysignf",
+        sym::copysignf64 => "__nv_copysign",
+        sym::floorf32 => "__nv_floorf",
+        sym::floorf64 => "__nv_floor",
+        sym::ceilf32 => "__nv_ceilf",
+        sym::ceilf64 => "__nv_ceil",
+        sym::truncf32 => "__nv_truncf",
+        sym::truncf64 => "__nv_trunc",
+        sym::rintf32 => "__nv_rintf",
+        sym::rintf64 => "__nv_rint",
         sym::nearbyintf32 => "__nv_nearbyintf",
         sym::nearbyintf64 => "__nv_nearbyint",
-        sym::roundf32     => "__nv_roundf",
-        sym::roundf64     => "__nv_round",
+        sym::roundf32 => "__nv_roundf",
+        sym::roundf64 => "__nv_round",
         _ => return None,
     };
     trace!("Retrieving nv intrinsic `{:?}`", llvm_name);
@@ -344,15 +345,9 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                 let (width, signed) = if let Some(res) = int_type_width_signed(ty, self.cx) {
                     res
                 } else {
-                    span_invalid_monomorphization_error(
-                        tcx.sess,
-                        span,
-                        &format!(
-                            "invalid monomorphization of `{}` intrinsic: \
-                                  expected basic integer type, found `{}`",
-                            name, ty
-                        ),
-                    );
+                    tcx
+                        .sess
+                        .emit_err(BasicIntegerType { span, name, ty });
                     return;
                 };
                 if name == sym::saturating_add || name == sym::saturating_sub {

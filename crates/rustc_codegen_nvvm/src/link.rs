@@ -1,7 +1,8 @@
 use rustc_codegen_ssa::CodegenResults;
 use rustc_codegen_ssa::CompiledModule;
 use rustc_codegen_ssa::NativeLib;
-use rustc_data_structures::owning_ref::OwningRef;
+use rustc_data_structures::owned_slice::OwnedSlice;
+
 use rustc_data_structures::rustc_erase_owner;
 use rustc_data_structures::sync::MetadataRef;
 use rustc_hash::FxHashSet;
@@ -27,6 +28,7 @@ use tracing::{debug, trace};
 use crate::context::CodegenArgs;
 use crate::LlvmMod;
 use rustc_ast::CRATE_NODE_ID;
+use rustc_session::config::OutFileName;
 
 pub(crate) struct NvvmMetadataLoader;
 
@@ -52,7 +54,11 @@ fn read_metadata(rlib: &Path) -> Result<MetadataRef, String> {
             if entry.path()? == Path::new(".metadata") {
                 let mut bytes = Vec::new();
                 entry.read_to_end(&mut bytes)?;
-                let buf: OwningRef<Vec<u8>, [u8]> = OwningRef::new(bytes);
+                let slice: OwnedSlice =
+                    rustc_data_structures::
+                    owned_slice::
+                    slice_owned(bytes, |b| &b[..]);
+
                 return Ok(Some(rustc_erase_owner!(buf.map_owner_box())));
             }
         }
@@ -92,7 +98,7 @@ pub fn link<'tcx>(
         }
 
         if outputs.outputs.should_codegen() {
-            let out_filename = out_filename(
+            let out_filename: OutFileName = out_filename(
                 sess,
                 crate_type,
                 outputs,
@@ -117,7 +123,7 @@ pub fn link<'tcx>(
     }
 }
 
-fn link_rlib(sess: &Session, codegen_results: &CodegenResults, out_filename: &Path) {
+fn link_rlib(sess: &Session, codegen_results: &CodegenResults, out_filename: &OutFileName) {
     debug!("Linking rlib `{:?}`", out_filename);
     let mut file_list = Vec::<&Path>::new();
 
@@ -171,7 +177,7 @@ fn link_exe(
     allocator: &Option<CompiledModule>,
     sess: &Session,
     crate_type: CrateType,
-    out_filename: &Path,
+    out_filename: &OutFileName,
     codegen_results: &CodegenResults,
 ) -> io::Result<()> {
     let mut objects = Vec::new();
@@ -208,7 +214,7 @@ fn codegen_into_ptx_file(
     sess: &Session,
     objects: &[PathBuf],
     rlibs: &[PathBuf],
-    out_filename: &Path,
+    out_filename: &OutFileName,
 ) -> io::Result<()> {
     debug!("Codegenning crate into PTX, allocator: {}, objects:\n{:#?}, rlibs:\n{:#?}, out_filename:\n{:#?}",
         allocator.is_some(),
@@ -276,13 +282,13 @@ fn codegen_into_ptx_file(
     std::fs::write(out_filename, ptx_bytes)
 }
 
-fn create_archive(sess: &Session, files: &[&Path], metadata: &[u8], out_filename: &Path) {
+fn create_archive(sess: &Session, files: &[&Path], metadata: &[u8], out_filename: &OutFileName) {
     if let Err(err) = try_create_archive(files, metadata, out_filename) {
         sess.fatal(&format!("Failed to create archive: {}", err));
     }
 }
 
-fn try_create_archive(files: &[&Path], metadata: &[u8], out_filename: &Path) -> io::Result<()> {
+fn try_create_archive(files: &[&Path], metadata: &[u8], out_filename: &OutFileName) -> io::Result<()> {
     let file = File::create(out_filename)?;
     let mut builder = Builder::new(file);
     {
