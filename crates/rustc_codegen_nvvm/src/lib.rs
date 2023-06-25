@@ -64,7 +64,7 @@ use rustc_codegen_ssa::{
 use rustc_errors::{ErrorGuaranteed, FatalError, Handler};
 use rustc_hash::FxHashMap;
 use rustc_metadata::EncodedMetadata;
-use rustc_middle::ty::query;
+use rustc_middle::query;
 use rustc_middle::{
     dep_graph::{WorkProduct, WorkProductId},
     ty::TyCtxt,
