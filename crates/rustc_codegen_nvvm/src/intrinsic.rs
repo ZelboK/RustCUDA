@@ -39,7 +39,7 @@ fn saturating_intrinsic_impl<'a, 'll, 'tcx>(
     use rustc_middle::ty::UintTy::*;
     use rustc_middle::ty::{Int, Uint};
 
-    let ty = b.cx.tcx().mk_ty(match (signed, width) {
+    let ty = b.cx.tcx().mk_ty_from_kind(match (signed, width) {
         (true, 8) => Int(I8),
         (true, 16) => Int(I16),
         (true, 32) => Int(I32),
@@ -267,7 +267,7 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                                     )
                                 }
                             }
-                            Primitive::F64 | Primitive::Pointer => self.va_arg(
+                            Primitive::F64 | Primitive::Pointer(_) => self.va_arg(
                                 args[0].immediate(),
                                 self.cx.layout_of(ret_ty).llvm_type(self.cx),
                             ),

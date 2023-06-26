@@ -301,7 +301,10 @@ pub(crate) fn inline_asm_call<'a, 'll, 'tcx>(
                 // llvm::AsmDialect::from_generic(dia),
                 dia,
             );
-            let call = bx.call(fty, None, v, inputs, None);
+            let call = bx.call(fty,
+                 None,
+                  v,
+                   inputs, None);
 
             // Store mark in a metadata node so we can map LLVM errors
             // back to source locations.  See #17552.

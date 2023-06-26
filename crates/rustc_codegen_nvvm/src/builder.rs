@@ -183,14 +183,18 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
         bx
     }
 
-    fn llbb(&self) -> &'ll BasicBlock {
-        unsafe { llvm::LLVMGetInsertBlock(self.llbuilder) }
+    fn cx(&self) -> &CodegenCx<'ll, 'tcx> {
+        self.cx
     }
 
     // fn build_sibling_block(&mut self, name: &str) -> Self {
     //     let llbb = self.append_sibling_block(name);
     //     Self::build(self.cx, llbb)
     // }
+
+    fn llbb(&self) -> &'ll BasicBlock {
+        unsafe { llvm::LLVMGetInsertBlock(self.llbuilder) }
+    }
 
     fn set_span(&mut self, _span: Span) {}
 
@@ -203,6 +207,10 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
 
     fn append_sibling_block(&mut self, name: &str) -> &'ll BasicBlock {
         Self::append_block(self.cx, self.llfn(), name)
+    }
+
+    fn switch_to_block(&mut self, llbb: &'ll BasicBlock) {
+        *self = Self::build(self.cx, llbb)
     }
 
     fn ret_void(&mut self) {
@@ -256,14 +264,6 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
             let on_val = self.const_uint_big(self.val_ty(v), on_val);
             unsafe { llvm::LLVMAddCase(switch, on_val, dest) }
         }
-    }
-
-    fn switch_to_block(&mut self, llbb: &'ll BasicBlock) {
-        *self = Self::build(self.cx, llbb)
-    }
-
-    fn cleanup_landing_pad(&mut self, _: &'ll Type, _: &'ll Value) -> &'ll Value {
-        todo!()
     }
 
     fn invoke(
@@ -541,7 +541,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
                         bx.range_metadata(load, scalar.valid_range(bx));
                     }
                 }
-                abi::Pointer if !scalar.valid_range(bx).contains(0) => {
+                abi::Pointer(..) if !scalar.valid_range(bx).contains(0) => {
                     bx.nonnull_metadata(load);
                 }
                 _ => {}
@@ -994,6 +994,16 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
         }
     }
 
+    fn set_personality_fn(&mut self, _personality: &'ll Value) {}
+
+    fn cleanup_landing_pad(&mut self, _: &'ll Type, _: &'ll Value) -> &'ll Value {
+        todo!()
+    }
+
+    fn filter_landing_pad(&mut self, pers_fn: Self::Value) -> (Self::Value, Self::Value) {
+        todo!()
+    }
+
     fn resume(&mut self, _exn: &'ll Value) {
         self.unsupported("resumes");
     }
@@ -1006,7 +1016,6 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
     }
 
     fn catch_pad(&mut self, _parent: &'ll Value, _args: &[&'ll Value]) {}
-
     fn catch_switch(
         &mut self,
         _parent: Option<&'ll Value>,
@@ -1015,8 +1024,6 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
     ) -> &'ll Value {
         self.unsupported("catch switches");
     }
-
-    fn set_personality_fn(&mut self, _personality: &'ll Value) {}
 
     // Atomic Operations
     fn atomic_cmpxchg(
@@ -1032,6 +1039,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
         // https://docs.nvidia.com/cuda/nvvm-ir-spec/index.html#cmpxchg-instruction
         self.fatal("atomic cmpxchg is not supported")
     }
+
     fn atomic_rmw(
         &mut self,
         _op: rustc_codegen_ssa::common::AtomicRmwBinOp,
@@ -1118,10 +1126,6 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
     fn zext(&mut self, val: &'ll Value, dest_ty: &'ll Type) -> &'ll Value {
         trace!("Zext {:?} to {:?}", val, dest_ty);
         unsafe { llvm::LLVMBuildZExt(self.llbuilder, val, dest_ty, unnamed()) }
-    }
-
-    fn cx(&self) -> &CodegenCx<'ll, 'tcx> {
-        self.cx
     }
 
     fn do_not_inline(&mut self, llret: &'ll Value) {

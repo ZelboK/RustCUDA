@@ -12,7 +12,7 @@ use rustc_middle::ty;
 use rustc_middle::ty::layout::TyAndLayout;
 use rustc_middle::ty::layout::{FnAbiOf, LayoutOf};
 use rustc_middle::ty::print::with_no_trimmed_paths;
-use rustc_middle::ty::Ty;
+use rustc_middle::ty::{Ty, TypeVisitableExt};
 use rustc_middle::ty::TypeFoldable;
 use rustc_target::abi::call::{CastTarget, FnAbi, Reg};
 use rustc_target::abi::Abi;
@@ -399,13 +399,14 @@ impl<'tcx> LayoutLlvmExt<'tcx> for TyAndLayout<'tcx> {
             Int(i, _) => cx.type_from_integer(i),
             F32 => cx.type_f32(),
             F64 => cx.type_f64(),
-            Pointer => {
+            Pointer(_address_space) => {
                 // If we know the alignment, pick something better than i8.
+
                 let (pointee, address_space) =
                     if let Some(pointee) = self.pointee_info_at(cx, offset) {
                         (
                             cx.type_pointee_for_align(pointee.align),
-                            pointee.address_space,
+                            _address_space,
                         )
                     } else {
                         (cx.type_i8(), AddressSpace::DATA)

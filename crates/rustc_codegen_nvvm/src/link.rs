@@ -26,7 +26,6 @@ use tracing::{debug, trace};
 use crate::context::CodegenArgs;
 use crate::LlvmMod;
 use rustc_ast::CRATE_NODE_ID;
-use rustc_data_structures::fx::FxHashSet;
 use rustc_session::config::OutFileName;
 use std::fmt;
 
@@ -34,7 +33,7 @@ pub(crate) struct NvvmMetadataLoader;
 
 impl fmt::Debug for NvvmMetadataLoader {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Placeholder until i know what to put here...: {}", self.id)
+        write!(f, "Placeholder until i know what to put here...: {}", self)
     }
 }
 impl MetadataLoader for NvvmMetadataLoader {
@@ -62,9 +61,9 @@ fn read_metadata(rlib: &Path) -> Result<OwnedSlice, String> {
                 entry.read_to_end(&mut bytes)?;
 
                 return
-                    rustc_data_structures::
-                    owned_slice::
-                    try_slice_owned(bytes, |b| &b[..]);
+                    Ok(Some(rustc_data_structures::
+                            owned_slice::
+                            slice_owned(bytes, |b| &b[..])));
             }
         }
         Ok(None)

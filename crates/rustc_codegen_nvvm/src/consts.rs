@@ -153,7 +153,7 @@ pub(crate) fn const_alloc_to_llvm<'ll>(
                 &cx.tcx,
             ),
             Scalar::Initialized {
-                value: Primitive::Pointer,
+                value: Primitive::Pointer(address_space),
                 valid_range: WrappingRange::full(dl.pointer_size),
             },
             cx.type_i8p_ext(address_space),
@@ -194,6 +194,8 @@ pub(crate) fn linkage_to_llvm(linkage: Linkage) -> llvm::Linkage {
         Linkage::Common => llvm::Linkage::CommonLinkage,
     }
 }
+
+
 
 fn check_and_apply_linkage<'ll, 'tcx>(
     cx: &CodegenCx<'ll, 'tcx>,
@@ -245,7 +247,7 @@ fn check_and_apply_linkage<'ll, 'tcx>(
                 .unwrap_or_else(|| {
                     cx.sess().span_fatal(
                         cx.tcx.def_span(span_def_id),
-                        &format!("symbol `{}` is already defined", &sym),
+                        format!("symbol `{}` is already defined", &sym),
                     )
                 });
             llvm::LLVMRustSetLinkage(g2, llvm::Linkage::InternalLinkage);

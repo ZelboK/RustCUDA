@@ -1891,7 +1891,7 @@ fn prepare_enum_metadata<'ll, 'tcx>(
                 Int(t, _) => t,
                 F32 => Integer::I32,
                 F64 => Integer::I64,
-                Pointer => cx.data_layout().ptr_sized_integer(),
+                Pointer(_) => cx.data_layout().ptr_sized_integer(),
             }
             .to_ty(cx.tcx, false);
 

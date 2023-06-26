@@ -5,14 +5,17 @@ use libc::c_uint;
 use rustc_ast::Mutability;
 use rustc_codegen_ssa::{
     mir::place::PlaceRef,
-    traits::{BaseTypeMethods, ConstMethods, DerivedTypeMethods, MiscMethods, StaticMethods},
+    traits::{BaseTypeMethods,
+             ConstMethods, DerivedTypeMethods, MiscMethods, StaticMethods},
 };
 use rustc_middle::mir::interpret::{ConstAllocation, GlobalAlloc, Scalar};
 use rustc_middle::ty::layout::LayoutOf;
 use rustc_middle::ty::{layout::TyAndLayout, ScalarInt};
 use rustc_span::Symbol;
-use rustc_target::abi::{self, AddressSpace, HasDataLayout, Size};
+use rustc_target::abi::{self, AddressSpace, HasDataLayout, Primitive, Size};
+use std::fmt;
 use tracing::trace;
+
 
 impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
     fn const_data_from_alloc(&self, alloc: ConstAllocation<'tcx>) -> &'ll Value {
@@ -137,6 +140,7 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
         layout: abi::Scalar,
         mut llty: &'ll Type,
     ) -> &'ll Value {
+        // bring this back when you figure out what info you want from it(cv) bc it doesn't impl debug
         trace!("Scalar to backend `{:?}`, `{:?}`, `{:?}`", cv, layout, llty);
         let bitsize = if layout.is_bool() {
             1
@@ -147,7 +151,7 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
             Scalar::Int(int) => {
                 let data = int.assert_bits(layout.size(self));
                 let llval = self.const_uint_big(self.type_ix(bitsize), data);
-                if layout.primitive() == Pointer {
+                if let Pointer(_address_space) = layout.primitive() {
                     unsafe { llvm::LLVMConstIntToPtr(llval, llty) }
                 } else {
                     self.const_bitcast(llval, llty)
@@ -194,11 +198,13 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
                         1,
                     )
                 };
-                if layout.primitive() != Pointer {
-                    unsafe { llvm::LLVMConstPtrToInt(llval, llty) }
-                } else {
-                    self.const_bitcast(llval, llty)
+                // need to check against what the old compiler Primitive was
+                //
+                match layout.primitive() {
+                    Pointer(_) => unsafe { llvm::LLVMConstPtrToInt(llval, llty) }
+                    _ =>  self.const_bitcast(llval, llty)
                 }
+
             }
         }
     }
@@ -232,6 +238,22 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
 
     fn const_ptrcast(&self, val: &'ll Value, ty: &'ll Type) -> &'ll Value {
         unsafe { llvm::LLVMConstPointerCast(val, ty) }
+    }
+
+    fn const_poison(&self, t: Self::Type) -> Self::Value {
+        todo!()
+    }
+
+    fn const_u128(&self, i: u128) -> Self::Value {
+        todo!()
+    }
+
+    fn const_bitcast(&self, val: Self::Value, ty: Self::Type) -> Self::Value {
+        todo!()
+    }
+
+    fn const_ptr_byte_offset(&self, val: Self::Value, offset: Size) -> Self::Value {
+        todo!()
     }
 }
 

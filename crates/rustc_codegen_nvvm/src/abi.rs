@@ -14,7 +14,7 @@ pub use rustc_middle::ty::layout::{FAT_PTR_ADDR, FAT_PTR_EXTRA};
 use rustc_middle::ty::{Ty, TyCtxt, TyKind};
 pub use rustc_target::abi::call::*;
 use rustc_target::abi::call::{CastTarget, Reg, RegKind};
-use rustc_target::abi::{self, HasDataLayout, Int};
+use rustc_target::abi::{self, HasDataLayout, Int, Primitive};
 pub use rustc_target::spec::abi::Abi;
 use tracing::trace;
 
@@ -484,10 +484,15 @@ impl<'ll, 'tcx> FnAbiLlvmExt<'ll, 'tcx> for FnAbi<'tcx, Ty<'tcx>> {
             // If the value is a boolean, the range is 0..2 and that ultimately
             // become 0..0 when the type becomes i1, which would be rejected
             // by the LLVM verifier.
-            if scalar.primitive().is_int() {
-                if !scalar.is_bool() && !scalar.is_always_valid(bx) {
-                    bx.range_metadata(callsite, scalar.valid_range(bx));
+            match scalar.primitive() {
+                Int(Integer, bool) => {
+                    if !scalar.is_bool() && !scalar.is_always_valid(bx) {
+                        bx.range_metadata(callsite, scalar.valid_range(bx));
+                    } // idk if this is ok lol
                 }
+                Primitive::F32 => {}
+                Primitive::F64 => {}
+                Primitive::Pointer(_) => {}
             }
         }
         for arg in self.args.iter() {

@@ -57,7 +57,11 @@ pub(crate) unsafe fn codegen(
         used.push(llfn);
         // nvvm doesnt support uwtable so dont try to generate it
 
-        let callee = kind.fn_name(method.name);
+        //
+        let callee = match kind {
+            AllocatorKind::Global => format!("__rg_{}", method.name),
+            AllocatorKind::Default => format!("__rg_{}",  method.name)
+        };
         let callee =
             llvm::LLVMRustGetOrInsertFunction(llmod, callee.as_ptr().cast(), callee.len(), ty);
         llvm::LLVMRustSetVisibility(callee, llvm::Visibility::Hidden);
@@ -95,7 +99,10 @@ pub(crate) unsafe fn codegen(
     llvm::Attribute::NoReturn.apply_llfn(llvm::AttributePlace::Function, llfn);
 
     let kind = alloc_error_handler_kind;
-    let callee = kind.fn_name(sym::oom);
+    let callee = match kind {
+        AllocatorKind::Global => format!("__rg_{}", sym::oom),
+        AllocatorKind::Default => format!("__rg_{}", sym::oom)
+    };
     let callee = llvm::LLVMRustGetOrInsertFunction(llmod, callee.as_ptr().cast(), callee.len(), ty);
 
     used.push(callee);

@@ -14,7 +14,7 @@ use rustc_middle::ty::layout::{
     FnAbiError, FnAbiOf, FnAbiRequest, HasParamEnv, HasTyCtxt, LayoutError, TyAndLayout,
 };
 use rustc_middle::ty::layout::{FnAbiOfHelpers, LayoutOfHelpers};
-use rustc_middle::ty::{Ty, TypeFoldable, TypeVisitable};
+use rustc_middle::ty::{Ty, TypeFoldable, TypeVisitable, TypeVisitableExt};
 use rustc_middle::{bug, span_bug, ty};
 use rustc_middle::{
     mir::mono::CodegenUnit,
@@ -30,6 +30,7 @@ use rustc_target::abi::{
 use rustc_target::spec::{HasTargetSpec, Target};
 use std::cell::{Cell, RefCell};
 use std::ffi::CStr;
+use std::fmt::Formatter;
 use std::hash::BuildHasherDefault;
 use std::os::raw::c_char;
 use std::os::raw::c_uint;
@@ -406,7 +407,7 @@ impl<'ll, 'tcx> CodegenCx<'ll, 'tcx> {
     pub fn get_fn(&self, instance: Instance<'tcx>) -> &'ll Value {
         let tcx = self.tcx;
 
-        assert!(!instance.substs.needs_infer());
+        assert!(!instance.substs.has_infer());
         assert!(!instance.substs.has_escaping_bound_vars());
         let sym = tcx.symbol_name(instance).name;
 
@@ -576,7 +577,7 @@ impl<'ll, 'tcx> LayoutOfHelpers<'tcx> for CodegenCx<'ll, 'tcx> {
     #[inline]
     fn handle_layout_err(&self, err: LayoutError<'tcx>, span: Span, ty: Ty<'tcx>) -> ! {
         if let LayoutError::SizeOverflow(_) = err {
-            self.sess().span_fatal(span, &err.to_string())
+            self.sess().span_fatal(span, err.to_string())
         } else {
             span_bug!(span, "failed to get layout for `{}`: {}", ty, err)
         }
@@ -586,6 +587,20 @@ impl<'ll, 'tcx> LayoutOfHelpers<'tcx> for CodegenCx<'ll, 'tcx> {
 impl<'tcx, 'll> HasParamEnv<'tcx> for CodegenCx<'ll, 'tcx> {
     fn param_env(&self) -> ty::ParamEnv<'tcx> {
         ty::ParamEnv::reveal_all()
+    }
+}
+
+struct FnAbiErrorWrapper<'tcx> {
+    value: FnAbiError<'tcx>,
+}
+
+impl<'tcx> std::fmt::Display for FnAbiErrorWrapper<'tcx>  {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            &_ => {
+                f.write_str(&format!("Failed to uh... i don't know"))
+            },
+        }
     }
 }
 
@@ -599,8 +614,11 @@ impl<'ll, 'tcx> FnAbiOfHelpers<'tcx> for CodegenCx<'ll, 'tcx> {
         span: Span,
         fn_abi_request: FnAbiRequest<'tcx>,
     ) -> ! {
+        let error = FnAbiErrorWrapper { value: err };
+
         if let FnAbiError::Layout(LayoutError::SizeOverflow(_)) = err {
-            self.tcx.sess.span_fatal(span, &err.to_string())
+            let error = FnAbiErrorWrapper { value: err };
+            self.tcx.sess.span_fatal(span, error.to_string())
         } else {
             match fn_abi_request {
                 FnAbiRequest::OfFnPtr { sig, extra_args } => {
@@ -609,7 +627,7 @@ impl<'ll, 'tcx> FnAbiOfHelpers<'tcx> for CodegenCx<'ll, 'tcx> {
                         "`fn_abi_of_fn_ptr({}, {:?})` failed: {}",
                         sig,
                         extra_args,
-                        err
+                        error
                     );
                 }
                 FnAbiRequest::OfInstance {
@@ -621,7 +639,7 @@ impl<'ll, 'tcx> FnAbiOfHelpers<'tcx> for CodegenCx<'ll, 'tcx> {
                         "`fn_abi_of_instance({}, {:?})` failed: {}",
                         instance,
                         extra_args,
-                        err
+                        error
                     );
                 }
             }
@@ -645,24 +663,29 @@ impl<'ll, 'tcx> CoverageInfoMethods<'tcx> for CodegenCx<'ll, 'tcx> {
 
 impl<'ll, 'tcx> TypeMembershipMethods<'tcx> for CodegenCx<'ll, 'tcx> {
     fn set_type_metadata(&self, function: &'ll Value, typeid: String) {
-        let typeid_metadata = self.typeid_metadata(typeid);
+        let typeid_metadata = self.typeid_metadata(typeid).unwrap();
         let v = [self.const_usize(0), typeid_metadata];
         unsafe {
             llvm::LLVMSetMetadata(
                 function,
                 llvm::MetadataType::MD_type as c_uint,
-                llvm::LLVMMDNodeInContext(self.llcx, v.as_ptr(), v.len() as c_uint),
+                llvm::LLVMMDNodeInContext(self.llcx,
+                                          v.as_ptr(), v.len() as c_uint),
             )
         }
     }
-
-    fn typeid_metadata(&self, typeid: String) -> &'ll Value {
+    // has to conform to the new type signature for typeid_metadata
+    // which is Option<value>
+    // even though we don't even handle any errors here
+    fn typeid_metadata(&self, typeid: String) -> Option<&'ll Value> {
         unsafe {
-            llvm::LLVMMDStringInContext(
+            let value = llvm::LLVMMDStringInContext(
                 self.llcx,
                 typeid.as_ptr() as *const c_char,
                 typeid.len() as c_uint,
-            )
+            );
+
+            Some(value)
         }
     }
 }
