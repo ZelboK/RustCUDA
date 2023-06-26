@@ -209,32 +209,32 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
         }
     }
 
-    fn from_const_alloc(
-        &self,
-        layout: TyAndLayout<'tcx>,
-        alloc: ConstAllocation<'tcx>,
-        offset: Size,
-    ) -> PlaceRef<'tcx, &'ll Value> {
-        assert_eq!(alloc.0 .0.align, layout.align.abi);
-        let llty = self.type_ptr_to(layout.llvm_type(self));
-        let llval = if layout.size == Size::ZERO {
-            let llval = self.const_usize(alloc.0 .0.align.bytes());
-            unsafe { llvm::LLVMConstIntToPtr(llval, llty) }
-        } else {
-            let init = const_alloc_to_llvm(self, &alloc);
-            let base_addr = self.static_addr_of(init, alloc.0 .0.align, None);
-
-            let llval = unsafe {
-                llvm::LLVMConstInBoundsGEP(
-                    self.const_bitcast(base_addr, self.type_i8p()),
-                    &self.const_usize(offset.bytes()),
-                    1,
-                )
-            };
-            self.const_bitcast(llval, llty)
-        };
-        PlaceRef::new_sized(llval, layout)
-    }
+    // fn from_const_alloc(
+    //     &self,
+    //     layout: TyAndLayout<'tcx>,
+    //     alloc: ConstAllocation<'tcx>,
+    //     offset: Size,
+    // ) -> PlaceRef<'tcx, &'ll Value> {
+    //     assert_eq!(alloc.0 .0.align, layout.align.abi);
+    //     let llty = self.type_ptr_to(layout.llvm_type(self));
+    //     let llval = if layout.size == Size::ZERO {
+    //         let llval = self.const_usize(alloc.0 .0.align.bytes());
+    //         unsafe { llvm::LLVMConstIntToPtr(llval, llty) }
+    //     } else {
+    //         let init = const_alloc_to_llvm(self, &alloc);
+    //         let base_addr = self.static_addr_of(init, alloc.0 .0.align, None);
+    //
+    //         let llval = unsafe {
+    //             llvm::LLVMConstInBoundsGEP(
+    //                 self.const_bitcast(base_addr, self.type_i8p()),
+    //                 &self.const_usize(offset.bytes()),
+    //                 1,
+    //             )
+    //         };
+    //         self.const_bitcast(llval, llty)
+    //     };
+    //     PlaceRef::new_sized(llval, layout)
+    // }
 
     fn const_ptrcast(&self, val: &'ll Value, ty: &'ll Type) -> &'ll Value {
         unsafe { llvm::LLVMConstPointerCast(val, ty) }
