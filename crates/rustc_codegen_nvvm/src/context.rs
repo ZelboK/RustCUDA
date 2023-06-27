@@ -176,7 +176,7 @@ impl<'ll, 'tcx> CodegenCx<'ll, 'tcx> {
     }
 
     pub(crate) fn fatal(&self, msg: &str) -> ! {
-        self.tcx.sess.fatal(msg)
+        self.tcx.sess.fatal(msg.to_string())
     }
 
     // im lazy i know

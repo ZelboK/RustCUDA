@@ -1,4 +1,4 @@
-use crate::llvm::{self, TargetMachine};
+use crate::llvm::{self, TargetMachine, MyTargetMachineError};
 use crate::override_fns::define_or_override_fn;
 use crate::{builder::Builder, context::CodegenCx, lto::ThinBuffer, LlvmMod, NvvmCodegenBackend};
 use cstr::cstr;
@@ -33,7 +33,7 @@ use std::{
 pub fn llvm_err(handler: &Handler, msg: &str) -> FatalError {
     match llvm::last_error() {
         Some(err) => handler.fatal(format!("{}: {}", msg, err)),
-        None => handler.fatal(msg),
+        None => handler.fatal(msg.to_string()),
     }
 }
 
@@ -122,8 +122,7 @@ pub fn target_machine_factory(
             )
         };
        
-        tm.ok_or_else(|| {
-            format!(
+        tm.ok_or_else(|| { format!(
                 "Could not create LLVM TargetMachine for triple: {}",
                 triple.to_str().unwrap()
             )

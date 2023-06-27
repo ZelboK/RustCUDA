@@ -175,7 +175,7 @@ impl WriteBackendMethods for NvvmCodegenBackend {
     type TargetMachine = &'static mut llvm::TargetMachine;
     type ThinData = ();
     type ThinBuffer = ThinBuffer;
-    type TargetMachineError = &'static mut llvm::MyTargetMachineError; // fix later 
+    type TargetMachineError = String; // fix later 
 
     fn run_link(
         _cgcx: &CodegenContext<Self>,
