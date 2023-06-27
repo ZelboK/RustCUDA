@@ -36,6 +36,12 @@ impl fmt::Debug for NvvmMetadataLoader {
         write!(f, "Placeholder until i know what to put here...: {}", self)
     }
 }
+
+impl fmt::Display for NvvmMetadataLoader {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Placeholder until i know what to put here...: {}", self)
+    }
+}
 impl MetadataLoader for NvvmMetadataLoader {
     fn get_rlib_metadata(&self, _target: &Target,
                          filename: &Path) -> Result<OwnedSlice, String> {

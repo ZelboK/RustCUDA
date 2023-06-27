@@ -41,7 +41,7 @@ impl<'ll, 'tcx> PreDefineMethods<'tcx> for CodegenCx<'ll, 'tcx> {
             .unwrap_or_else(|| {
                 self.sess().span_fatal(
                     self.tcx.def_span(def_id),
-                    &format!("symbol `{}` is already defined", symbol_name),
+                    format!("symbol `{}` is already defined", symbol_name),
                 )
             });
 

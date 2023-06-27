@@ -256,6 +256,8 @@ impl WriteBackendMethods for NvvmCodegenBackend {
         }
     }
 
+    type TargetMachineError;  // idk wtf im supposed to do with this but ill fix later
+
     // fn run_lto_pass_manager(
     //     _: &CodegenContext<Self>,
     //     _: &ModuleCodegen<Self::Module>,

@@ -7,6 +7,7 @@ use rustc_data_structures::stable_hasher::{HashStable, StableHasher};
 use rustc_hir::def::CtorKind;
 use rustc_hir::def_id::{DefId, LOCAL_CRATE};
 use rustc_index::vec::{Idx, IndexVec};
+use rustc_abi::FieldIdx;
 use rustc_middle::mir::{self, GeneratorLayout};
 use rustc_middle::ty::layout::{self, IntegerExt, LayoutOf, PrimitiveExt, TyAndLayout};
 use rustc_middle::ty::subst::GenericArgKind;
@@ -1212,7 +1213,7 @@ fn closure_saved_names_of_captured_variables(tcx: TyCtxt<'_>, def_id: DefId) -> 
         .iter()
         .filter_map(|var| {
             let is_ref = match var.value {
-                mir::VarDebugInfoContents::Place(place) if place.local == mir::Local::new(1) => {
+                mir::VarDebugInfoContents::Place(place) if place.local == rustc_middle::mir::Local::new(1) => {
                     // The projection is either `[.., Field, Deref]` or `[.., Field]`. It
                     // implies whether the variable is captured by value or by reference.
                     matches!(place.projection.last().unwrap(), mir::ProjectionElem::Deref)
@@ -1676,7 +1677,7 @@ impl<'tcx> VariantInfo<'_, 'tcx> {
     fn field_name(&self, i: usize, cx: &CodegenCx<'_, 'tcx>) -> String {
         let field_name = match *self {
             VariantInfo::Adt(variant) if variant.ctor_kind() != Some(CtorKind::Fn) => {
-                Some(variant.fields[i].ident(cx.tcx).name)
+                Some(variant.fields[FieldIdx::from_usize(i)].ident(cx.tcx).name)
             }
             VariantInfo::Generator {
                 generator_layout,

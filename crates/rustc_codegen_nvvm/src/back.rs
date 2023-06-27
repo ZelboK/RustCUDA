@@ -13,7 +13,7 @@ use rustc_codegen_ssa::{
     CompiledModule, ModuleCodegen, ModuleKind,
 };
 use rustc_data_structures::small_c_str::SmallCStr;
-use rustc_errors::{FatalError, Handler};
+use rustc_errors::{FatalError, Handler, DiagnosticMessage, DiagnosticBuilder};
 use rustc_fs_util::path_to_c_string;
 use rustc_middle::bug;
 use rustc_middle::mir::mono::MonoItem;
@@ -22,6 +22,7 @@ use rustc_session::config::{self, DebugInfo, OutputType};
 use rustc_session::Session;
 use rustc_span::Symbol;
 use rustc_target::spec::{CodeModel, RelocModel};
+use std::convert::TryFrom;
 use std::ffi::CString;
 use std::sync::Arc;
 use std::{
@@ -31,7 +32,7 @@ use std::{
 
 pub fn llvm_err(handler: &Handler, msg: &str) -> FatalError {
     match llvm::last_error() {
-        Some(err) => handler.fatal(&format!("{}: {}", msg, err)),
+        Some(err) => handler.fatal(format!("{}: {}", msg, err)),
         None => handler.fatal(msg),
     }
 }
@@ -220,7 +221,7 @@ pub(crate) unsafe fn codegen(
 
     if let Err(e) = std::fs::write(&out, data) {
         let msg = format!("failed to write bytecode to {}: {}", out.display(), e);
-        diag_handler.err(&msg);
+        diag_handler.err(msg);
     }
 
     Ok(CompiledModule {
@@ -387,7 +388,7 @@ pub(crate) unsafe fn optimize(
 
         for pass in &config.passes {
             if !addpass(pass) {
-                diag_handler.warn(&format!("unknown pass `{}`, ignoring", pass));
+                diag_handler.warn(format!("unknown pass `{}`, ignoring", pass));
             }
         }
 
