@@ -1,4 +1,4 @@
-use crate::llvm::{self};
+use crate::llvm::{self, TargetMachine};
 use crate::override_fns::define_or_override_fn;
 use crate::{builder::Builder, context::CodegenCx, lto::ThinBuffer, LlvmMod, NvvmCodegenBackend};
 use cstr::cstr;
@@ -105,7 +105,7 @@ pub fn target_machine_factory(
         .unwrap_or(sess.target.trap_unreachable);
 
     Arc::new(move |_config: TargetMachineFactoryConfig| {
-        let tm = unsafe {
+        let tm: Option<&mut TargetMachine> = unsafe {
             llvm::LLVMRustCreateTargetMachine(
                 triple.as_ptr(),
                 std::ptr::null(),
@@ -121,6 +121,7 @@ pub fn target_machine_factory(
                 false,
             )
         };
+       
         tm.ok_or_else(|| {
             format!(
                 "Could not create LLVM TargetMachine for triple: {}",

@@ -492,7 +492,20 @@ extern "C" {
     pub type TargetMachine;
 }
 extern "C" {
+    pub type TargetMachineError;
+}
+extern "C" {
     pub(crate) type MemoryBuffer;
+}
+
+pub struct MyTargetMachineError {
+    inner: *mut TargetMachineError,
+}
+
+impl std::fmt::Debug for MyTargetMachineError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MyTargetMachineError at {:p}", self.inner)
+    }
 }
 
 /// LLVMRustChecksumKind

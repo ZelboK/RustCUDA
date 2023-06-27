@@ -18,8 +18,9 @@ use rustc_middle::ty::layout::{
 };
 use rustc_middle::ty::{self, Ty, TyCtxt};
 use rustc_span::Span;
+use rustc_target::abi::{Abi, Align, Scalar, Size, WrappingRange};
 use rustc_target::abi::call::FnAbi;
-use rustc_target::abi::{self, AddressSpace, Align, Size, WrappingRange};
+use rustc_target::abi::{self, AddressSpace};
 use rustc_target::spec::{HasTargetSpec, Target};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
@@ -998,7 +999,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
 
     fn set_personality_fn(&mut self, _personality: &'ll Value) {}
 
-    fn cleanup_landing_pad(&mut self, _: &'ll Value) -> &'ll Value {
+    fn cleanup_landing_pad(&mut self, _: &'ll Value)-> (Self::Value, Self::Value) {
         todo!()
     }
 
@@ -1133,6 +1134,38 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
 
     fn do_not_inline(&mut self, llret: &'ll Value) {
         llvm::Attribute::NoInline.apply_callsite(llvm::AttributePlace::Function, llret);
+    }
+
+    fn to_immediate(&mut self, val: Self::Value, layout: TyAndLayout<'_>) -> Self::Value {
+        if let Abi::Scalar(scalar) = layout.abi {
+            self.to_immediate_scalar(val, scalar)
+        } else {
+            val
+        }
+    }
+
+    fn cast_float_to_int(
+        &mut self,
+        signed: bool,
+        x: Self::Value,
+        dest_ty: Self::Type,
+    ) -> Self::Value {
+        let in_ty = self.cx().val_ty(x);
+        let (float_ty, int_ty) = if self.cx().type_kind(dest_ty) == TypeKind::Vector
+            && self.cx().type_kind(in_ty) == TypeKind::Vector
+        {
+            (self.cx().element_type(in_ty), self.cx().element_type(dest_ty))
+        } else {
+            (in_ty, dest_ty)
+        };
+        assert!(matches!(self.cx().type_kind(float_ty), TypeKind::Float | TypeKind::Double));
+        assert_eq!(self.cx().type_kind(int_ty), TypeKind::Integer);
+
+        if let Some(false) = self.cx().sess().opts.unstable_opts.saturating_float_casts {
+            return if signed { self.fptosi(x, dest_ty) } else { self.fptoui(x, dest_ty) };
+        }
+
+        if signed { self.fptosi_sat(x, dest_ty) } else { self.fptoui_sat(x, dest_ty) }
     }
 }
 

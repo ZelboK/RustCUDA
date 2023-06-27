@@ -20,7 +20,7 @@ use rustc_span::{FileNameDisplayPreference, DUMMY_SP};
 use rustc_target::abi::{Abi, Align, HasDataLayout, Integer, TagEncoding};
 use rustc_target::abi::{
     Primitive::{self, *},
-    Size, VariantIdx, Variants,
+    Size, VariantIdx, Variants, FieldIdx
 };
 
 use crate::context::CodegenCx;
@@ -982,7 +982,7 @@ pub fn compile_unit_metadata<'ll>(
     _codegen_unit_name: &str,
     debug_context: &CrateDebugContext<'ll, '_>,
 ) -> &'ll DIDescriptor {
-    let name_in_debuginfo = match tcx.sess.local_crate_source_file {
+    let name_in_debuginfo = match tcx.sess.local_crate_source_file() {
         Some(ref path) => path.clone(),
         None => PathBuf::from(&*tcx.crate_name(LOCAL_CRATE).as_str()),
     };
@@ -1676,7 +1676,7 @@ impl<'tcx> VariantInfo<'_, 'tcx> {
     fn field_name(&self, i: usize, cx: &CodegenCx<'_, 'tcx>) -> String {
         let field_name = match *self {
             VariantInfo::Adt(variant) if variant.ctor_kind() != Some(CtorKind::Fn) => {
-                Some(variant.fields[usize::from_usize(i)].ident(cx.tcx).name)
+                Some(variant.fields[FieldIdx::from_usize(i)].ident(cx.tcx).name)
             }
             VariantInfo::Generator {
                 generator_layout,

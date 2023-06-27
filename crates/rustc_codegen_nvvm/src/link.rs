@@ -167,15 +167,10 @@ fn link_rlib(sess: &Session, codegen_results: &CodegenResults, out_filename: &Pa
         // but including libraries doesnt make sense because nvvm would have to translate
         // the binary directly to ptx. We might want to add some way of linking in
         // ptx files or custom bitcode modules as "libraries" perhaps in the future.
-        match lib.name {
-            Some(name) => {
-                sess.err(format!(
-                    "Adding native libraries to rlib is not supported in CUDA: {}",
-                    name
-                ));
-            }
-            _ => (),
-        }
+        sess.err(format!(
+            "Adding native libraries to rlib is not supported in CUDA: {}",
+            lib.name
+        ));
     }
     trace!("Files linked in rlib:\n{:#?}", file_list);
 
