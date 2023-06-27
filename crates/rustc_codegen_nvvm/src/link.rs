@@ -181,7 +181,7 @@ fn link_exe(
     allocator: &Option<CompiledModule>,
     sess: &Session,
     crate_type: CrateType,
-    out_filename: &OutFileName,
+    out_filename: &Path,
     codegen_results: &CodegenResults,
 ) -> io::Result<()> {
     let mut objects = Vec::new();

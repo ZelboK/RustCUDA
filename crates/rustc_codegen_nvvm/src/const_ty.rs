@@ -209,6 +209,7 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
         }
     }
 
+    // removed in nightly 1.72.0 so figure out the consequences if any
     // fn from_const_alloc(
     //     &self,
     //     layout: TyAndLayout<'tcx>,

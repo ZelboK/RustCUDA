@@ -17,7 +17,7 @@ use rustc_middle::ty::layout::HasTyCtxt;
 use rustc_middle::ty::subst::{GenericArgKind, SubstsRef};
 use rustc_middle::ty::{
     self, Binder, ExistentialTraitRef, Instance, ParamEnv, PolyExistentialTraitRef, Ty,
-    TypeFoldable, TypeVisitable,
+    TypeFoldable, TypeVisitable, TypeVisitableExt,
 };
 use rustc_session::config::{self, DebugInfo};
 use rustc_span::symbol::Symbol;
@@ -425,7 +425,7 @@ impl<'ll, 'tcx> DebugInfoMethods<'tcx> for CodegenCx<'ll, 'tcx> {
                             ty::Adt(def, ..) if !def.is_box() => {
                                 // Again, only create type information if full debuginfo is enabled
                                 if cx.sess().opts.debuginfo == DebugInfo::Full
-                                    && !impl_self_ty.needs_subst()
+                                    && !impl_self_ty.has_param()
                                 {
                                     Some(type_metadata(cx, impl_self_ty, rustc_span::DUMMY_SP))
                                 } else {

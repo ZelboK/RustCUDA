@@ -76,10 +76,10 @@ unsafe fn configure_llvm(sess: &Session) {
         };
         // Set the llvm "program name" to make usage and invalid argument messages more clear.
         // add("rustc -Cllvm-args=\"...\" with", true);
-        if sess.time_llvm_passes() {
+        if sess.opts.unstable_opts.time_llvm_passes {
             add("-time-passes", false);
         }
-        if sess.print_llvm_passes() {
+        if sess.opts.unstable_opts.print_llvm_passes {
             add("-debug-pass=Structure", false);
         }
         if !sess.opts.unstable_opts.no_generate_arange_section {

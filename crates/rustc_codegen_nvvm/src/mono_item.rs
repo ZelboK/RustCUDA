@@ -11,7 +11,7 @@ pub use rustc_middle::mir::mono::MonoItem;
 use rustc_middle::mir::mono::{Linkage, Visibility};
 use rustc_middle::ty::layout::FnAbiOf;
 use rustc_middle::ty::layout::LayoutOf;
-use rustc_middle::ty::{self, Instance, TypeFoldable, TypeVisitable};
+use rustc_middle::ty::{self, Instance, TypeFoldable, TypeVisitable, TypeVisitableExt};
 use tracing::trace;
 
 pub(crate) fn visibility_to_llvm(linkage: Visibility) -> llvm::Visibility {
@@ -66,7 +66,7 @@ impl<'ll, 'tcx> PreDefineMethods<'tcx> for CodegenCx<'ll, 'tcx> {
             linkage,
             self.tcx.codegen_fn_attrs(instance.def_id())
         );
-        assert!(!instance.substs.needs_infer());
+        assert!(!instance.substs.has_infer());
 
         let fn_abi = self.fn_abi_of_instance(instance, ty::List::empty());
 
