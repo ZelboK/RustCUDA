@@ -11,7 +11,7 @@ use rustc_codegen_ssa::traits::*;
 use rustc_data_structures::fx::{FxHashMap, FxHashSet};
 use rustc_data_structures::sync::Lrc;
 use rustc_hir::def_id::{DefId, DefIdMap};
-use rustc_index::vec::IndexVec;
+use rustc_index::IndexVec;
 use rustc_middle::mir;
 use rustc_middle::ty::layout::HasTyCtxt;
 use rustc_middle::ty::subst::{GenericArgKind, SubstsRef};

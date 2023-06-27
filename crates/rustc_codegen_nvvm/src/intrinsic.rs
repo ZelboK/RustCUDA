@@ -322,7 +322,8 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                     _ => bug!(),
                 };
                 self.call(
-                    self.type_i1(),None,
+                    self.type_i1(),
+                    None,
                     None,
                     expect,
                     &[
@@ -367,16 +368,23 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                         sym::ctlz | sym::cttz => {
                             let y = self.const_bool(false);
                             let llfn = self.get_intrinsic(&format!("llvm.{}.i{}", name, width));
-                            self.call(self.type_i1(), None, llfn, &[args[0].immediate(), y], None)
+                            self.call(self.type_i1(), None, None, llfn, &[args[0].immediate(), y], None)
                         }
                         sym::ctlz_nonzero | sym::cttz_nonzero => {
                             let y = self.const_bool(true);
                             let llvm_name = &format!("llvm.{}.i{}", &name_str[..4], width);
                             let llfn = self.get_intrinsic(llvm_name);
-                            self.call(self.type_i1(), None,None, llfn, &[args[0].immediate(), y], None)
+                            self.call(
+                                self.type_i1(),
+                                None,
+                                None,
+                                llfn,
+                                &[args[0].immediate(), y],
+                                None,
+                            )
                         }
                         sym::ctpop => self.call(
-                            self.type_i1(),
+                            self.type_i1(),None,
                             None,
                             self.get_intrinsic(&format!("llvm.ctpop.i{}", width)),
                             &[args[0].immediate()],
@@ -387,7 +395,7 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                                 args[0].immediate() // byte swap a u8/i8 is just a no-op
                             } else {
                                 self.call(
-                                    self.type_i1(),
+                                    self.type_i1(),None,
                                     None,
                                     self.get_intrinsic(&format!("llvm.bswap.i{}", width)),
                                     &[args[0].immediate()],
@@ -396,7 +404,8 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                             }
                         }
                         sym::bitreverse => self.call(
-                            self.type_i1(),None,
+                            self.type_i1(),
+                            None,
                             None,
                             self.get_intrinsic(&format!("llvm.bitreverse.i{}", width)),
                             &[args[0].immediate()],
@@ -410,7 +419,7 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                             let llvm_name =
                                 &format!("llvm.fsh{}.i{}", if is_left { 'l' } else { 'r' }, width);
                             let llfn = self.get_intrinsic(llvm_name);
-                            self.call(self.type_i1(), None, llfn, &[val, val, raw_shift], None)
+                            self.call(self.type_i1(), None,None, llfn, &[val, val, raw_shift], None)
                         }
                         sym::saturating_add | sym::saturating_sub => {
                             let is_add = name == sym::saturating_add;
@@ -463,7 +472,7 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
                     let b_ptr = self.bitcast(b, i8p_ty);
                     let n = self.const_usize(layout.size().bytes());
                     let intrinsic = self.get_intrinsic("memcmp");
-                    let cmp = self.call(self.type_i1(), None, intrinsic, &[a_ptr, b_ptr, n], None);
+                    let cmp = self.call(self.type_i1(),None, None, intrinsic, &[a_ptr, b_ptr, n], None);
                     self.icmp(IntPredicate::IntEQ, cmp, self.const_i32(0))
                 }
             }
@@ -488,7 +497,7 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
     fn abort(&mut self) {
         trace!("Generate abort call");
         let fnname = self.get_intrinsic("llvm.trap");
-        self.call(self.type_i1(), None, fnname, &[], None);
+        self.call(self.type_i1(),None, None, fnname, &[], None);
     }
 
     fn assume(&mut self, val: Self::Value) {
@@ -501,7 +510,7 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
         trace!("Generate expect call with `{:?}`, {}", cond, expected);
         let expect = self.get_intrinsic("llvm.expect.i1");
         self.call(
-            self.type_i1(),
+            self.type_i1(),None,
             None,
             expect,
             &[cond, self.const_bool(expected)],
@@ -526,12 +535,12 @@ impl<'a, 'll, 'tcx> IntrinsicCallMethods<'tcx> for Builder<'a, 'll, 'tcx> {
     fn va_start(&mut self, va_list: &'ll Value) -> Self::Value {
         trace!("Generate va_start `{:?}`", va_list);
         let intrinsic = self.cx().get_intrinsic("llvm.va_start");
-        self.call(self.type_i1(), None, intrinsic, &[va_list], None)
+        self.call(self.type_i1(),None, None, intrinsic, &[va_list], None)
     }
 
     fn va_end(&mut self, va_list: &'ll Value) -> Self::Value {
         trace!("Generate va_end call `{:?}`", va_list);
         let intrinsic = self.cx().get_intrinsic("llvm.va_end");
-        self.call(self.type_i1(), None, intrinsic, &[va_list], None)
+        self.call(self.type_i1(),None, None, intrinsic, &[va_list], None)
     }
 }

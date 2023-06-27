@@ -160,17 +160,21 @@ fn link_rlib(sess: &Session, codegen_results: &CodegenResults, out_filename: &Pa
             | NativeLibKind::RawDylib
             | NativeLibKind::LinkArg
             | NativeLibKind::Unspecified => continue,
+            NativeLibKind::WasmImportModule => todo!(),
         }
         // native libraries in cuda doesnt make much sense, extern functions
         // do exist in nvvm for stuff like cuda syscalls and cuda provided functions
         // but including libraries doesnt make sense because nvvm would have to translate
         // the binary directly to ptx. We might want to add some way of linking in
         // ptx files or custom bitcode modules as "libraries" perhaps in the future.
-        if let Some(name) = lib.name {
-            sess.err(format!(
-                "Adding native libraries to rlib is not supported in CUDA: {}",
-                name
-            ));
+        match lib.name {
+            Some(name) => {
+                sess.err(format!(
+                    "Adding native libraries to rlib is not supported in CUDA: {}",
+                    name
+                ));
+            }
+            _ => (),
         }
     }
     trace!("Files linked in rlib:\n{:#?}", file_list);

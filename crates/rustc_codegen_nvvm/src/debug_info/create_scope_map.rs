@@ -11,7 +11,6 @@ use rustc_middle::ty::{self, Instance, EarlyBinder};
 use rustc_session::config::DebugInfo;
 
 use rustc_index::bit_set::BitSet;
-use rustc_index::vec::Idx;
 
 use super::metadata::file_metadata;
 use super::util::DIB;
