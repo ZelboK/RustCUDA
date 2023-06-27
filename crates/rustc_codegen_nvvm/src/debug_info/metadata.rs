@@ -6,8 +6,8 @@ use rustc_data_structures::fx::FxHashMap;
 use rustc_data_structures::stable_hasher::{HashStable, StableHasher};
 use rustc_hir::def::CtorKind;
 use rustc_hir::def_id::{DefId, LOCAL_CRATE};
+use rustc_index::Idx;
 use rustc_index::vec::{Idx, IndexVec};
-use rustc_abi::FieldIdx;
 use rustc_middle::mir::{self, GeneratorLayout};
 use rustc_middle::ty::layout::{self, IntegerExt, LayoutOf, PrimitiveExt, TyAndLayout};
 use rustc_middle::ty::subst::GenericArgKind;
@@ -1677,7 +1677,7 @@ impl<'tcx> VariantInfo<'_, 'tcx> {
     fn field_name(&self, i: usize, cx: &CodegenCx<'_, 'tcx>) -> String {
         let field_name = match *self {
             VariantInfo::Adt(variant) if variant.ctor_kind() != Some(CtorKind::Fn) => {
-                Some(variant.fields[FieldIdx::from_usize(i)].ident(cx.tcx).name)
+                Some(variant.fields[Idx::new(i)].ident(cx.tcx).name)
             }
             VariantInfo::Generator {
                 generator_layout,

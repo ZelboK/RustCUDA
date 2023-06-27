@@ -13,7 +13,7 @@ use rustc_codegen_ssa::{
     CompiledModule, ModuleCodegen, ModuleKind,
 };
 use rustc_data_structures::small_c_str::SmallCStr;
-use rustc_errors::{FatalError, Handler, DiagnosticMessage, DiagnosticBuilder};
+use rustc_errors::{FatalError, Handler};
 use rustc_fs_util::path_to_c_string;
 use rustc_middle::bug;
 use rustc_middle::mir::mono::MonoItem;

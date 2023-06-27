@@ -302,6 +302,7 @@ pub(crate) fn inline_asm_call<'a, 'll, 'tcx>(
                 dia,
             );
             let call = bx.call(fty,
+                None,
                  None,
                   v,
                    inputs, None);

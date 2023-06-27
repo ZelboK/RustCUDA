@@ -11,7 +11,8 @@ pub use rustc_middle::mir::mono::MonoItem;
 use rustc_middle::mir::mono::{Linkage, Visibility};
 use rustc_middle::ty::layout::FnAbiOf;
 use rustc_middle::ty::layout::LayoutOf;
-use rustc_middle::ty::{self, Instance, TypeFoldable, TypeVisitable, TypeVisitableExt};
+use rustc_middle::ty::{self, Instance, TypeVisitable, TypeVisitableExt};
+use rustc_middle::ty::TypeFoldable;
 use tracing::trace;
 
 pub(crate) fn visibility_to_llvm(linkage: Visibility) -> llvm::Visibility {

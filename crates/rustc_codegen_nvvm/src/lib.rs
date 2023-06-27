@@ -61,6 +61,7 @@ use rustc_codegen_ssa::{
     traits::{CodegenBackend, ExtraBackendMethods, WriteBackendMethods},
     CodegenResults, CompiledModule, ModuleCodegen,
 };
+use rustc_data_structures::fx::FxIndexMap;
 use rustc_errors::{ErrorGuaranteed, FatalError, Handler};
 use rustc_hash::FxHashMap;
 use rustc_metadata::EncodedMetadata;
@@ -136,7 +137,7 @@ impl CodegenBackend for NvvmCodegenBackend {
         ongoing_codegen: Box<dyn std::any::Any>,
         sess: &Session,
         outputs: &OutputFilenames,
-    ) -> Result<(CodegenResults, FxHashMap<WorkProductId, WorkProduct>), ErrorGuaranteed> {
+    ) -> Result<(CodegenResults, FxIndexMap<WorkProductId, WorkProduct>), ErrorGuaranteed> {
         debug!("Join codegen");
         let (codegen_results, work_products) = ongoing_codegen
             .downcast::<OngoingCodegen<Self>>()
@@ -161,6 +162,10 @@ impl CodegenBackend for NvvmCodegenBackend {
             &codegen_results.crate_info.local_crate_name.as_str(),
         );
         Ok(())
+    }
+
+    fn locale_resource(&self) -> &'static str {
+        todo!()
     }
 }
 
@@ -256,7 +261,9 @@ impl WriteBackendMethods for NvvmCodegenBackend {
         }
     }
 
-    type TargetMachineError;  // idk wtf im supposed to do with this but ill fix later
+    type TargetMachineError;
+
+   // type TargetMachineError;  // idk wtf im supposed to do with this but ill fix later
 
     // fn run_lto_pass_manager(
     //     _: &CodegenContext<Self>,

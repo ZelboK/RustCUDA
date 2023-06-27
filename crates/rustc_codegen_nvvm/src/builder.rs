@@ -12,6 +12,7 @@ use rustc_codegen_ssa::traits::BackendTypes;
 use rustc_codegen_ssa::traits::*;
 use rustc_codegen_ssa::MemFlags;
 use rustc_hir::def_id::DefId;
+use rustc_middle::middle::codegen_fn_attrs::CodegenFnAttrs;
 use rustc_middle::ty::layout::{
     FnAbiError, FnAbiOfHelpers, FnAbiRequest, LayoutError, LayoutOfHelpers, TyAndLayout,
 };
@@ -269,6 +270,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
     fn invoke(
         &mut self,
         ty: &'ll Type,
+        fn_attrs: Option<&CodegenFnAttrs>,
         fn_abi: Option<&FnAbi<'tcx, Ty<'tcx>>>,
         llfn: &'ll Value,
         args: &[&'ll Value],
@@ -277,7 +279,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
         funclet: Option<&()>,
     ) -> &'ll Value {
         trace!("invoke");
-        let call = self.call(ty, None, llfn, args, funclet);
+        let call = self.call(ty, None, None, llfn, args, funclet);
         // exceptions arent a thing, go directly to the `then` block
         unsafe { llvm::LLVMBuildBr(self.llbuilder, then) };
         call
@@ -436,7 +438,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
         let intrinsic = self.get_intrinsic(name);
         // call actually ignores the ty param for now, we just need it for conformance with nightly api
         // so give it a dummy type
-        let res = self.call(self.type_i1(), None, intrinsic, &[lhs, rhs], None);
+        let res = self.call(self.type_i1(), None,None, intrinsic, &[lhs, rhs], None);
         (self.extract_value(res, 0), self.extract_value(res, 1))
     }
 
@@ -518,7 +520,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
         // self.call(vprintf, &[formatlist, valist], None);
 
         let trap = self.get_intrinsic("llvm.trap");
-        self.call(ty, None, trap, &[], None);
+        self.call(ty, None,None, trap, &[], None);
         unsafe { llvm::LLVMBuildLoad(self.llbuilder, ptr, unnamed()) }
     }
 
@@ -996,7 +998,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
 
     fn set_personality_fn(&mut self, _personality: &'ll Value) {}
 
-    fn cleanup_landing_pad(&mut self, _: &'ll Type, _: &'ll Value) -> &'ll Value {
+    fn cleanup_landing_pad(&mut self, _: &'ll Value) -> &'ll Value {
         todo!()
     }
 
@@ -1004,7 +1006,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
         todo!()
     }
 
-    fn resume(&mut self, _exn: &'ll Value) {
+    fn resume(&mut self, _exn: &'ll Value, _exn1: &'ll Value) {
         self.unsupported("resumes");
     }
 
@@ -1090,6 +1092,7 @@ impl<'ll, 'tcx, 'a> BuilderMethods<'a, 'tcx> for Builder<'a, 'll, 'tcx> {
     fn call(
         &mut self,
         _: &'ll Type,
+        fn_attrs: Option<&CodegenFnAttrs>,
         _fn_abi: Option<&FnAbi<'tcx, Ty<'tcx>>>,
         llfn: &'ll Value,
         args: &[&'ll Value],
@@ -1262,6 +1265,7 @@ impl<'a, 'll, 'tcx> Builder<'a, 'll, 'tcx> {
         let ptr = self.pointercast(ptr, self.cx.type_i8p());
         self.call(
             self.type_i1(),
+            None,
             None,
             lifetime_intrinsic,
             &[self.cx.const_u64(size), ptr],

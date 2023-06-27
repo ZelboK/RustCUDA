@@ -1,5 +1,6 @@
 use rustc_codegen_ssa::mir::debuginfo::{DebugScope, FunctionDebugContext};
 use rustc_codegen_ssa::traits::*;
+use rustc_index::Idx;
 use rustc_middle::ty::layout::FnAbiOf;
 
 use crate::context::CodegenCx;

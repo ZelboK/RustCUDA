@@ -108,7 +108,7 @@ pub fn link<'tcx>(
         }
 
         if outputs.outputs.should_codegen() {
-            let out_filename: OutFileName = out_filename(
+            let out_filename = out_filename(
                 sess,
                 crate_type,
                 outputs,
@@ -116,24 +116,24 @@ pub fn link<'tcx>(
             );
             match crate_type {
                 CrateType::Rlib => {
-                    link_rlib(sess, codegen_results, &out_filename);
+                    link_rlib(sess, codegen_results, &out_filename.as_path());
                 }
                 CrateType::Executable | CrateType::Cdylib | CrateType::Dylib => {
                     let _ = link_exe(
                         &codegen_results.allocator_module,
                         sess,
                         crate_type,
-                        &out_filename,
+                        &out_filename.as_path(),
                         codegen_results,
                     );
                 }
-                other => sess.fatal(&format!("Invalid crate type: {:?}", other)),
+                other => sess.fatal(format!("Invalid crate type: {:?}", other)),
             }
         }
     }
 }
 
-fn link_rlib(sess: &Session, codegen_results: &CodegenResults, out_filename: &OutFileName) {
+fn link_rlib(sess: &Session, codegen_results: &CodegenResults, out_filename: &Path) {
     debug!("Linking rlib `{:?}`", out_filename);
     let mut file_list = Vec::<&Path>::new();
 
@@ -167,7 +167,7 @@ fn link_rlib(sess: &Session, codegen_results: &CodegenResults, out_filename: &Ou
         // the binary directly to ptx. We might want to add some way of linking in
         // ptx files or custom bitcode modules as "libraries" perhaps in the future.
         if let Some(name) = lib.name {
-            sess.err(&format!(
+            sess.err(format!(
                 "Adding native libraries to rlib is not supported in CUDA: {}",
                 name
             ));
@@ -224,7 +224,7 @@ fn codegen_into_ptx_file(
     sess: &Session,
     objects: &[PathBuf],
     rlibs: &[PathBuf],
-    out_filename: &OutFileName,
+    out_filename: &Path,
 ) -> io::Result<()> {
     debug!("Codegenning crate into PTX, allocator: {}, objects:\n{:#?}, rlibs:\n{:#?}, out_filename:\n{:#?}",
         allocator.is_some(),
@@ -285,21 +285,21 @@ fn codegen_into_ptx_file(
         Ok(bytes) => bytes,
         Err(err) => {
             // TODO(RDambrosio016): maybe include the nvvm log with this fatal error
-            sess.fatal(&err.to_string())
+            sess.fatal(err.to_string())
         }
     };
 
     std::fs::write(out_filename, ptx_bytes)
 }
 
-fn create_archive(sess: &Session, files: &[&Path], metadata: &[u8], out_filename: &OutFileName) {
+fn create_archive(sess: &Session, files: &[&Path], metadata: &[u8], out_filename: &Path) {
     if let Err(err) = try_create_archive(files, metadata, out_filename) {
-        sess.fatal(&format!("Failed to create archive: {}", err));
+        sess.fatal(format!("Failed to create archive: {}", err));
     }
 }
 
 fn try_create_archive(files: &[&Path],
-                      metadata: &[u8], out_filename: &OutFileName) -> io::Result<()> {
+                      metadata: &[u8], out_filename: &Path) -> io::Result<()> {
     let file = File::create(out_filename)?;
     let mut builder = Builder::new(file);
     {

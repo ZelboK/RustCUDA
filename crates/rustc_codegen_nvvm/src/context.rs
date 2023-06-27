@@ -14,7 +14,8 @@ use rustc_middle::ty::layout::{
     FnAbiError, FnAbiOf, FnAbiRequest, HasParamEnv, HasTyCtxt, LayoutError, TyAndLayout,
 };
 use rustc_middle::ty::layout::{FnAbiOfHelpers, LayoutOfHelpers};
-use rustc_middle::ty::{Ty, TypeFoldable, TypeVisitable, TypeVisitableExt};
+use rustc_middle::ty::{Ty, TypeVisitable, TypeVisitableExt};
+use rustc_middle::ty::TypeFoldable;
 use rustc_middle::{bug, span_bug, ty};
 use rustc_middle::{
     mir::mono::CodegenUnit,

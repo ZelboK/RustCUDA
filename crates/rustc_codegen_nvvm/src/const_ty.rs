@@ -4,10 +4,10 @@ use abi::Primitive::Pointer;
 use libc::c_uint;
 use rustc_ast::Mutability;
 use rustc_codegen_ssa::{
-    mir::place::PlaceRef,
     traits::{BaseTypeMethods,
              ConstMethods, DerivedTypeMethods, MiscMethods, StaticMethods},
 };
+use rustc_codegen_ssa::mir::place::PlaceRef;
 use rustc_middle::mir::interpret::{ConstAllocation, GlobalAlloc, Scalar};
 use rustc_middle::ty::layout::LayoutOf;
 use rustc_middle::ty::{layout::TyAndLayout, ScalarInt};
